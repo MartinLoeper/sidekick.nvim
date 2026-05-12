@@ -94,6 +94,28 @@ function M.get(filter)
     end
   end
 
+  -- Sort results: tool definitions (no session) first, then terminal sessions, then tmux sessions
+  table.sort(all, function(a, b)
+    local a_has_session = a.session ~= nil
+    local b_has_session = b.session ~= nil
+    
+    -- Tool definitions (no session) come first
+    if a_has_session ~= b_has_session then
+      return not a_has_session
+    end
+    
+    -- Among sessions: terminal (non-external) before tmux (external)
+    if a_has_session and b_has_session then
+      local a_is_terminal = not a.external
+      local b_is_terminal = not b.external
+      if a_is_terminal ~= b_is_terminal then
+        return a_is_terminal
+      end
+    end
+    
+    return false -- maintain original order for same type
+  end)
+
   if not filter.attached then
     for name, tool in pairs(Config.tools()) do
       local sid = Session.sid({ tool = name })

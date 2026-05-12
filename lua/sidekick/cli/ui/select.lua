@@ -12,6 +12,16 @@ function M.select(opts)
   assert(type(opts) == "table", "opts must be a table")
   local tools = require("sidekick.cli.state").get(opts.filter)
 
+  -- Sort tools: terminal sessions (non-tmux) first, then tmux sessions
+  table.sort(tools, function(a, b)
+    local a_is_terminal = a.session and not a.external
+    local b_is_terminal = b.session and not b.external
+    if a_is_terminal ~= b_is_terminal then
+      return a_is_terminal -- terminal sessions come first
+    end
+    return false -- maintain original order for same type
+  end)
+
   ---@param state? sidekick.cli.State
   local on_select = function(state)
     if state and not state.installed then

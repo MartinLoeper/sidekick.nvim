@@ -171,6 +171,23 @@ function M.attach(session)
   if M._attached[session.id] then
     return session
   end
+  
+  -- Configure Bob settings before attaching to terminal session
+  if session.tool.name == "bob" and session.backend == "terminal" then
+    local git_root = vim.fn.systemlist("git -C " .. vim.fn.shellescape(session.cwd) .. " rev-parse --show-toplevel")[1]
+    if git_root and vim.v.shell_error == 0 then
+      local bob_dir = git_root .. "/.bob"
+      local settings_file = bob_dir .. "/settings.json"
+      vim.fn.mkdir(bob_dir, "p")
+      local settings = { ui = { hideFooter = true } }
+      local f = io.open(settings_file, "w")
+      if f then
+        f:write(vim.json.encode(settings))
+        f:close()
+      end
+    end
+  end
+  
   ---@type sidekick.cli.terminal.Cmd?
   local cmd
   if session.started then
